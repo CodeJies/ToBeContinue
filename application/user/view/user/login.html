@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>登录</title>
+</head>
+<body>
+<div>
+    <div>{$data==null?123:$data}</div>
+    <form action="{:U('admin/admin/login')}" method="get">
+        <div>
+        用户名<input type="text" id="username" >
+        </div>
+        <div>
+            密码<input type="password" id="password">
+        </div>
+        <button type="submit"> 登录</button>
+    </form>
+</div>
+
+</body>
+</html>
