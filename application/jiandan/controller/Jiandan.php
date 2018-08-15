@@ -18,6 +18,7 @@ class Jiandan extends Controller
     public function getMeiziList()
     {
         $pageIndex = $this->request->post('pageIndex');
+        $pageIndex = 1;
         $data = array();
         $header[] = "X-Client-ID:7e43c50781295f355";
         $header[] = "X-Access-Token:4dc049e83308fe6c66ee08a1833577f90298bcec3dca66cc1d20";
@@ -38,7 +39,7 @@ class Jiandan extends Controller
             $href = $hrefs->item($i);
             $linktext = $href->nodeValue;
             $url = base64_decode($linktext);
-            $src = $this->imagePathHander($url);
+            $src = $this->imagePathHandle($url);
             if ($src) $data[] = $src;
 //            $data= $this->splitData($data,$url);
         }
@@ -70,7 +71,7 @@ class Jiandan extends Controller
     function imagePathHandle($src)
     {
         $start = strpos($src, '//ww');
-        $end = strpos($src, '.git');
+        $end = strpos($src, '.gif');
         if ($end) {
             return 'https:' . substr($src, $start, ($end - $start + 4));
         }
