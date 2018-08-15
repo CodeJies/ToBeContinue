@@ -18,18 +18,24 @@ class Jiandan extends Base
 
     public function imgList(){
         $type     = $this->request->get('type',1);
+
         $dataList = Db::table('img')
             ->where('type = '. $type)
             ->field('id,path,created_at')
             ->order('created_at desc,updated_at desc')
-            ->paginate(10);
-        if(!empty($dataList['data'])) return parent::successReturn($dataList);
+            ->paginate(10)
+            ->toArray();
+
+        if(!empty($dataList['data'])){
+            return parent::successReturn($dataList);
+        }
         return parent::failReturn();
     }
 
     public function getMeiziList()
     {
         $pageIndex = $this->request->post('pageIndex');
+        $pageIndex = 7;
         $data = array();
         $header[] = "X-Client-ID:7e43c50781295f355";
         $header[] = "X-Access-Token:4dc049e83308fe6c66ee08a1833577f90298bcec3dca66cc1d20";
