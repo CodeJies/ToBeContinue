@@ -2,9 +2,10 @@
 
 namespace app\jiandan\Controller;
 
-use think\Controller;
+use app\jiandan\Base;
 use DOMDocument;
 use DOMXPath;
+use think\Db;
 
 /**
  * Created by PhpStorm.
@@ -12,13 +13,23 @@ use DOMXPath;
  * Date: 2018/8/13
  * Time: 17:27
  */
-class Jiandan extends Controller
+class Jiandan extends Base
 {
+
+    public function imgList(){
+        $type     = $this->request->get('type',1);
+        $dataList = Db::table('img')
+            ->where('type = '. $type)
+            ->field('id,path,created_at')
+            ->order('created_at desc,updated_at desc')
+            ->paginate(10);
+        if(!empty($dataList['data'])) return parent::successReturn($dataList);
+        return parent::failReturn();
+    }
 
     public function getMeiziList()
     {
         $pageIndex = $this->request->post('pageIndex');
-        $pageIndex = 1;
         $data = array();
         $header[] = "X-Client-ID:7e43c50781295f355";
         $header[] = "X-Access-Token:4dc049e83308fe6c66ee08a1833577f90298bcec3dca66cc1d20";
@@ -41,14 +52,39 @@ class Jiandan extends Controller
             $url = base64_decode($linktext);
             $src = $this->imagePathHandle($url);
             if ($src) $data[] = $src;
-//            $data= $this->splitData($data,$url);
+        }
+        if ($data) {
+            $strPath = implode(',', $data);
+            $existsPath = Db::table('img')->where(['path' => ['in', $strPath]])->field('path')->select();
+            $i = 0;
+            $currentTime = date('Y-m-d H:i:s', time());
+            $saveData = array();
+            if ($existsPath) {//不存在数据库
+                foreach($existsPath as $k => $value){//处理数组为 in_array()函数调用
+                    $arrExistsPath[] = $value['path'];
+                }
+                foreach ($data as $key => &$dat) {//去除存在数据库的数据
+                    if (in_array($dat, $arrExistsPath)) { unset($dat); continue; }
+                    $saveData[$i]['path'] = $dat;
+                    $saveData[$i]['created_at'] = $currentTime;
+                    $saveData[$i]['updated_at'] = $currentTime;
+                    $i++;
+                }
+            } else {
+                foreach ($data as $item) {//重新构建保存入库数组
+                    $saveData[$i]['path'] = $item;
+                    $saveData[$i]['created_at'] = $currentTime;
+                    $saveData[$i]['updated_at'] = $currentTime;
+                    $i++;
+                }
+            }
+            if($saveData){
+                $res = Db::table('img')->insertAll($saveData);
+                if ($res) return parent::successReturn($data);
+            }
         }
 
-        if ($data) {
-            return jsonString(array_utf8_encode($data));
-        } else {
-            return jsonString(null, "请求失败", 0);
-        }
+        return parent::failReturn();
     }
 
     public function splitData($data, $str)
