@@ -34,8 +34,7 @@ class Jiandan extends Base
 
     public function getMeiziList()
     {
-        $pageIndex = $this->request->post('pageIndex');
-        $pageIndex = 7;
+        $pageIndex = $this->request->param('pageIndex',15);
         $data = array();
         $header[] = "X-Client-ID:7e43c50781295f355";
         $header[] = "X-Access-Token:4dc049e83308fe6c66ee08a1833577f90298bcec3dca66cc1d20";
