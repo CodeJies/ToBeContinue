@@ -22,10 +22,10 @@ class Jiandan extends Base
         $dataList = Db::table('img')
             ->where('type = '. $type)
             ->field('id,path,created_at')
-            ->order('id desc')
-            ->paginate(10)
-            ->toArray();
 
+            ->order(['id' => 'desc', 'updated_at' => 'desc'])
+            ->paginate(10);
+        $dataList = $dataList->toArray();
         if(!empty($dataList['data'])){
             return parent::successReturn($dataList);
         }
