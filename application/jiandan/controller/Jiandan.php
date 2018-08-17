@@ -22,7 +22,7 @@ class Jiandan extends Base
         $dataList = Db::table('img')
             ->where('type = '. $type)
             ->field('id,path,created_at')
-            ->order('created_at desc,updated_at desc')
+            ->order('id desc')
             ->paginate(10)
             ->toArray();
 
@@ -32,22 +32,17 @@ class Jiandan extends Base
         return parent::failReturn();
     }
 
-    public function getMeiziList()
+    public function getMeiziList($pageIndex)
     {
-        $pageIndex = $this->request->param('pageIndex',15);
-        $data = array();
-        $header[] = "X-Client-ID:7e43c50781295f355";
-        $header[] = "X-Access-Token:4dc049e83308fe6c66ee08a1833577f90298bcec3dca66cc1d20";
+        if(is_null($pageIndex)){
+            $pageIndex=35;//一共45页。抓取后面10页，从35页开始抓
+        }
+        if($pageIndex>45){
+            return parent::successReturn("抓取成功");
+        }
         $tagetUrl = 'http://jandan.net/ooxx/page-' . $pageIndex . '#comments';
-        $html = doCurlPostRequest($tagetUrl, $data, $header);
-        //创建一个DomDocument对象，用于处理一个HTML
-        $dom = new DOMDocument();
-        //从一个字符串加载HTML
-        @$dom->loadHTML($html);
-        //使该HTML规范化
-        $dom->normalize();
-        //用DOMXpath加载DOM，用于查询
-        $xpath = new DOMXPath($dom);
+
+        $xpath =$this->getXpath($tagetUrl);
         //根據規則抓取妹子圖的數據
         $hrefs = $xpath->evaluate("//*[@id=\"comments\"]/ol/li/div/div/div[2]/p");
 
@@ -85,11 +80,18 @@ class Jiandan extends Base
             }
             if($saveData){
                 $res = Db::table('img')->insertAll($saveData);
-                if ($res) return parent::successReturn($data);
+                if ($res) {
+                    echo"添加成功 页数:".$pageIndex."\n";
+//                    return parent::successReturn($data);
+                }else{
+                    echo"添加失败 页数:".$pageIndex."\n";
+                }
+            }else{
+                echo"添加失败 页数:".$pageIndex."\n";
             }
         }
-
-        return parent::failReturn();
+//        return parent::failReturn();
+         return $this->getMeiziList($pageIndex+1);
     }
 
     public function splitData($data, $str)
@@ -123,6 +125,37 @@ class Jiandan extends Base
         }
 
         return ;
+    }
+
+
+    public function getDuanziList(){
+        $tagetUrl = 'http://jandan.net/top-duan';
+        $xpath =$this->getXpath($tagetUrl);
+        //根據規則抓取热门段子的數據
+        $content = $xpath->evaluate("//*[@id=\"duan\"]/ol/li/div/div/div[2]/p|//*[@id=\"duan\"]/ol/li/div/div/div[1]/strong");
+        for ($i = 0; $i < $content->length; $i+=2) {
+            $author = $content->item($i)->nodeValue;
+            $duanzi=$content->item($i+1)->nodeValue;
+            echo '作者:'.$author."<br/>"."段子:".$duanzi."<br/>";
+        }
+    }
+
+
+    //获取Xpath对象
+    public function getXpath($url){
+        $data=array();
+        $header[] = "X-Client-ID:7e43c50781295f355";
+        $header[] = "X-Access-Token:4dc049e83308fe6c66ee08a1833577f90298bcec3dca66cc1d20";
+        $html = doCurlPostRequest($url, $data, $header);
+        //创建一个DomDocument对象，用于处理一个HTML
+        $dom = new DOMDocument();
+        //从一个字符串加载HTML
+        @$dom->loadHTML($html);
+        //使该HTML规范化
+        $dom->normalize();
+        //用DOMXpath加载DOM，用于查询
+        $xpath = new DOMXPath($dom);
+        return $xpath;
     }
 
 }
