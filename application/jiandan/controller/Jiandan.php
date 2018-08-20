@@ -128,15 +128,17 @@ class Jiandan extends Base
     }
 
 
-    public function getDuanziList(){
+    public function getDuanziList()
+    {
         $tagetUrl = 'http://jandan.net/top-duan';
-        $xpath =$this->getXpath($tagetUrl);
+        $xpath = $this->getXpath($tagetUrl);
         //根據規則抓取热门段子的數據
-        $content = $xpath->evaluate("//*[@id=\"duan\"]/ol/li/div/div/div[2]/p|//*[@id=\"duan\"]/ol/li/div/div/div[1]/strong");
-        for ($i = 0; $i < $content->length; $i+=2) {
+        $content = $xpath->evaluate("//*[@id=\"duan\"]/ol/li/div/div/div[2]|//*[@id=\"duan\"]/ol/li/div/div/div[1]/strong");
+        for ($i = 0; $i < $content->length; $i += 2) {
             $author = $content->item($i)->nodeValue;
-            $duanzi=$content->item($i+1)->nodeValue;
-            echo '作者:'.$author."<br/>"."段子:".$duanzi."<br/>";
+            $duanzi = self::jokeHandle($content->item($i + 1)->nodeValue);
+            if (empty($duanzi['joke'])) continue;
+            echo $i . '-作者:' . $author . "<br/>" . ($i + 1) . "-段子:" . $duanzi['joke'] . "<br/>";
         }
     }
 
@@ -156,6 +158,41 @@ class Jiandan extends Base
         //用DOMXpath加载DOM，用于查询
         $xpath = new DOMXPath($dom);
         return $xpath;
+    }
+
+    /**
+     * 段子处理
+     * @param $joke
+     * @return array
+     */
+    private function jokeHandle($joke)
+    {
+        $joke = self::trimAll($joke);
+        $data = ['joke' => ''];
+        if(strpos($joke,'@段子')){
+            $arr  = explode('@段子',$joke);
+            $data['joke'] = $arr[1];//段子内容
+            $strlen = strlen($data['joke']);//段子总长度
+            $maxCut = 10;//设置最大剪取长度
+            if($strlen > $maxCut){
+                $data['tag'] = substr($data['joke'],0,$maxCut);//标记 用作判断是否重复
+            }else{
+                $data['tag'] = $data['joke'];
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * 删除空格
+     * @param $str
+     * @return mixed
+     */
+    private function trimAll($str)
+    {
+        $seachArr = array(" ", "　", "\t", "\n", "\r");
+        $replaceArr = array("", "", "", "", "");
+        return str_replace($seachArr, $replaceArr, $str);
     }
 
 }
