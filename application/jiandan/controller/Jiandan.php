@@ -91,7 +91,73 @@ class Jiandan extends Base
             }
         }
 //        return parent::failReturn();
-         return $this->getMeiziList($pageIndex+1);
+        return $this->getMeiziList($pageIndex+1);
+    }
+
+    public function getDuanziList(){
+        $tagetUrl = 'http://jandan.net/top-duan';
+        $xpath =$this->getXpath($tagetUrl);
+        $data=array();
+        //根據規則抓取热门段子的數據
+        $content = $xpath->evaluate("//*[@id=\"duan\"]/ol/li/div/div/div[2]/p|//*[@id=\"duan\"]/ol/li/div/div/div[1]/strong");
+        $count=0;
+        for ($i = 0; $i < $content->length; $i+=2) {
+            $author = $content->item($i)->nodeValue;
+            $duanzi=$content->item($i+1)->nodeValue;
+            $data[$count]['author']=$author;
+            $data[$count]['content']=$duanzi;
+            $count++;
+
+        }
+        echo dump($data);
+        if($data){
+            $strPath="";
+            foreach($data as $item){
+                $strPath=$strPath.",".$item[]['content'];
+            }
+            return $strPath;
+            $strPath = implode(',', $data[]['content']);
+            $existsPath = Db::table('joke')->where(['content' => ['in', $strPath]])->field('content')->select();
+            $i = 0;
+            $currentTime=date('Y-m-d H:i:s', time());
+
+            $saveData = array();
+            if ($existsPath) {//不存在数据库
+                foreach($existsPath as $k => $value){//处理数组为 in_array()函数调用
+                    $arrExistsPath[] = $value;
+                }
+                foreach ($data as $key => &$dat) {//去除存在数据库的数据
+                    if (in_array($dat, $arrExistsPath)) { unset($dat); continue; }
+                    $saveData[$i]['content'] = $dat[$i]['content'];
+                    $saveData[$i]['author']=$dat[$i]['author'];
+                    $saveData[$i]['created_at'] = $currentTime;
+                    $saveData[$i]['updated_at'] = $currentTime;
+                    $i++;
+                }
+            } else {
+                foreach ($data as $item) {//重新构建保存入库数组
+                    $saveData[$i]['author'] = $item[$i]['author'];
+                    $saveData[$i]['content'] = $item[$i]['content'];
+                    $saveData[$i]['created_at'] = $currentTime;
+                    $saveData[$i]['updated_at'] = $currentTime;
+                    $i++;
+                }
+            }
+
+            if($saveData){
+                $res = Db::table('joke')->insertAll($saveData);
+                if ($res) {
+                    echo"添加成功 ";
+//                    return parent::successReturn($data);
+                }else{
+                    echo"添加失败 ";
+                }
+            }else{
+                echo"添加失败 ";
+            }
+        }else{
+            return '123';
+        }
     }
 
     public function splitData($data, $str)
@@ -128,17 +194,7 @@ class Jiandan extends Base
     }
 
 
-    public function getDuanziList(){
-        $tagetUrl = 'http://jandan.net/top-duan';
-        $xpath =$this->getXpath($tagetUrl);
-        //根據規則抓取热门段子的數據
-        $content = $xpath->evaluate("//*[@id=\"duan\"]/ol/li/div/div/div[2]/p|//*[@id=\"duan\"]/ol/li/div/div/div[1]/strong");
-        for ($i = 0; $i < $content->length; $i+=2) {
-            $author = $content->item($i)->nodeValue;
-            $duanzi=$content->item($i+1)->nodeValue;
-            echo '作者:'.$author."<br/>"."段子:".$duanzi."<br/>";
-        }
-    }
+
 
 
     //获取Xpath对象
