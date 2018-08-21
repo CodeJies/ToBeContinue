@@ -117,7 +117,7 @@ class Base extends Controller
      * @param null $data
      * @return \think\response\Json
      */
-    protected function failReturn($msg='获取失败', $data = null)
+    protected function failReturn($data = null, $msg='获取失败')
     {
         return JsonHandler::failReturn($msg, $data);
     }

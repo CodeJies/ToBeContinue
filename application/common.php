@@ -62,3 +62,33 @@ function array_utf8_encode($dat)
         $ret[$i] = array_utf8_encode($d);
     return $ret;
 }
+
+//获取Xpath对象
+function get_x_path($url)
+{
+    $data = array();
+    $header[] = "X-Client-ID:7e43c50781295f355";
+    $header[] = "X-Access-Token:4dc049e83308fe6c66ee08a1833577f90298bcec3dca66cc1d20";
+    $html = doCurlPostRequest($url, $data, $header);
+    //创建一个DomDocument对象，用于处理一个HTML
+    $dom = new DOMDocument();
+    //从一个字符串加载HTML
+    @$dom->loadHTML($html);
+    //使该HTML规范化
+    $dom->normalize();
+    //用DOMXpath加载DOM，用于查询
+    $xpath = new DOMXPath($dom);
+    return $xpath;
+}
+
+/**
+ * 删除空格
+ * @param $str
+ * @return mixed
+ */
+function trim_all($str)
+{
+    $seachArr = array(" ", "　", "\t", "\n", "\r");
+    $replaceArr = array("", "", "", "", "");
+    return str_replace($seachArr, $replaceArr, $str);
+}
