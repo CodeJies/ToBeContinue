@@ -10,6 +10,7 @@ namespace app\jiandan\controller;
 
 use app\jiandan\Base;
 use app\jiandan\logic\Meizi as MeiziLogic;
+
 class Meizi extends Base
 {
 
@@ -18,20 +19,29 @@ class Meizi extends Base
      * @param $pageIndex
      * @return \think\response\Json
      */
-    public function pullMeiziList()
+    public function pullMeiziList($pageIndex)
     {
-        if (!file_exists(ROOT_PATH . "record_file.txt")) {
-            mkdir(ROOT_PATH . 'record_file.txt', 0777, true);
+        $file_path = ROOT_PATH . "record_file.txt";
+        if (!file_exists($file_path)) {
+            file_put_contents($file_path, $pageIndex);
+        }
+        if($pageIndex){
+            $page = $pageIndex;
+        }else{
+            $record_file = fopen($file_path, 'rb');
+            $page        = fread($record_file, filesize($file_path));
+            fclose($record_file);
         }
 
-        $record_file = fopen("record_file.txt", "w");
-        $pageIndex = fread($record_file);
-        $pageIndex = empty($pageIndex) ? 47 : $pageIndex;
-        fclose($record_file);
-
         $meizi_logic = \think\Loader::model('meizi','logic');
-        $result      = $meizi_logic->pullMeiziList($pageIndex);
-
+        $result      = $meizi_logic->pullMeiziList($page);
+        if($result){
+            return self::pullMeiziList($page+1);
+        }else{
+            $record_file = fopen($file_path, 'w+');
+            fwrite($record_file, ($page-1));
+            fclose($record_file);
+        }
         return $this->jsonResponse($result);
     }
 
